@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulo 1: Manipulación de Alimentos - Gamificado</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #16a34a;
+            --accent: #f59e0b;
+            --bg: #f0fdf4;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #1e40af);
+            color: white;
+            width: 100%;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 { margin: 0; font-size: 1.8rem; }
+        p.subtitle { margin: 5px 0 0; opacity: 0.9; }
+
+        /* Navegación de Juegos */
+        .nav-games {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Contenedores de Juego */
+        .game-container {
+            width: 95%;
+            max-width: 800px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            display: none; /* Oculto por defecto */
+            animation: fadeIn 0.5s ease;
+            margin-bottom: 40px;
+        }
+
+        .game-container.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* JUEGO 1: FLASHCARDS */
+        .flashcard-scene {
+            perspective: 1000px;
+            width: 100%;
+            height: 300px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 15px;
+        }
+
+        .flashcard.is-flipped { transform: rotateY(180deg); }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .card-front { background: white; color: var(--primary); }
+        .card-back { background: var(--primary); color: white; transform: rotateY(180deg); }
+
+        .controls { display: flex; justify-content: space-between; align-items: center; }
+        .control-btn { background: #e2e8f0; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        .control-btn:hover { background: #cbd5e1; }
+
+        /* JUEGO 2: QUIZ */
+        .quiz-question { font-size: 1.2rem; margin-bottom: 20px; font-weight: bold; color: var(--text); }
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .option-btn {
+            background: white; border: 2px solid #e2e8f0; padding: 15px;
+            border-radius: 10px; cursor: pointer; text-align: left; transition: 0.2s;
+        }
+        .option-btn:hover { border-color: var(--primary); background: #f8fafc; }
+        .option-btn.correct { background: #dcfce7; border-color: var(--secondary); color: var(--secondary); }
+        .option-btn.wrong { background: #fee2e2; border-color: #ef4444; color: #ef4444; }
+        
+        .score-display { text-align: center; font-size: 1.5rem; margin-top: 20px; color: var(--secondary); font-weight: bold; }
+
+        /* JUEGO 3: MEMORIA */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .memory-card {
+            background: var(--primary);
+            height: 120px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            font-size: 0.9rem;
+            padding: 5px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .memory-card.flipped { background: white; color: var(--text); border: 2px solid var(--primary); transform: scale(1.05); cursor: default; overflow-y: auto;}
+        .memory-card.matched { background: var(--secondary); color: white; border-color: var(--secondary); opacity: 0.8; }
+        
+        /* Utilidades */
+        .badge { background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 10px; }
+        .btn-reset { background: var(--text); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 20px; display: block; margin-left: auto; margin-right: auto;}
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1><i class="fas fa-utensils"></i> Curso Manipulación de Alimentos</h1>
+    <p class="subtitle">Módulo 1: Fundamentos y BPM</p>
+</header>
+
+<div class="nav-games">
+    <button class="nav-btn active" onclick="switchGame('flashcards')"><i class="fas fa-clone"></i> Repaso (Flashcards)</button>
+    <button class="nav-btn" onclick="switchGame('quiz')"><i class="fas fa-question-circle"></i> Quiz Evaluativo</button>
+    <button class="nav-btn" onclick="switchGame('memory')"><i class="fas fa-brain"></i> Memoria</button>
+</div>
+
+<div id="game-flashcards" class="game-container active">
+    <h2 style="text-align:center; color: var(--primary);">Modo Estudio</h2>
+    <p style="text-align:center; margin-bottom:20px;">Haz clic en la tarjeta para ver la respuesta.</p>
+    
+    <div class="flashcard-scene" onclick="flipCard()">
+        <div class="flashcard" id="flashcard">
+            <div class="card-face card-front">
+                <span class="badge">Pregunta</span>
+                <p id="fc-question" style="font-size: 1.2rem;">Cargando...</p>
+            </div>
+            <div class="card-face card-back">
+                <span class="badge" style="background:white; color:var(--primary);">Respuesta</span>
+                <p id="fc-answer">Cargando...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="control-btn" onclick="prevCard(event)"><i class="fas fa-chevron-left"></i> Anterior</button>
+        <span id="fc-counter">1 / 10</span>
+        <button class="control-btn" onclick="nextCard(event)">Siguiente <i class="fas fa-chevron-right"></i></button>
+    </div>
+</div>
+
+<div id="game-quiz" class="game-container">
+    <h2 style="text-align:center; color: var(--primary);">Quiz de Conocimientos</h2>
+    <div id="quiz-area">
+        <div class="badge" style="background: var(--primary);">Pregunta <span id="q-number">1</span></div>
+        <p class="quiz-question" id="quiz-q-text">Pregunta...</p>
+        <div class="options-grid" id="quiz-options">
+            </div>
+    </div>
+    <div id="quiz-score-area" style="display:none;">
+        <div class="score-display">Puntuación Final: <span id="final-score">0</span></div>
+        <button class="btn-reset" onclick="initQuiz()">Intentar de nuevo</button>
+    </div>
+</div>
+
+<div id="game-memory" class="game-container">
+    <h2 style="text-align:center; color: var(--primary);">Juego de Memoria</h2>
+    <p style="text-align:center;">Encuentra las parejas (Pregunta - Respuesta)</p>
+    <div class="memory-grid" id="memory-board">
+        </div>
+    <button class="btn-reset" onclick="initMemory()">Reiniciar Tablero</button>
+</div>
+
+<script>
+    // DATOS EXTRAÍDOS DEL CSV Y PDF
+    const db = [
+        { q: "¿Según la Res. 2674/2013, qué es la inocuidad?", a: "Garantía de que los alimentos no causarán daño al consumidor." },
+        { q: "¿Qué son las Buenas Prácticas de Manufactura (BPM)?", a: "Principios básicos de higiene en la manipulación para garantizar condiciones sanitarias." },
+        { q: "¿Qué es un manipulador de alimentos?", a: "Persona que interviene directa o indirectamente en actividades de fabricación, preparación o expendio." },
+        { q: "¿Qué es la contaminación cruzada?", a: "Transferencia de contaminantes de un alimento a otro (directa o indirecta)." },
+        { q: "¿Cuáles son los 4 programas del Plan de Saneamiento?", a: "Limpieza y desinfección, residuos sólidos, control de plagas y agua potable." },
+        { q: "¿Dónde debe ubicarse un establecimiento de alimentos?", a: "Lejos de focos de insalubridad como basuras o agua estancada." },
+        { q: "¿Duración recomendada del lavado de manos (OMS)?", a: "Entre 40 y 60 segundos." },
+        { q: "¿Qué documento requiere todo producto químico?", a: "Ficha técnica y hoja de datos de seguridad (HDS)." },
+        { q: "¿Cómo deben ser las papeleras en los baños?", a: "De accionamiento indirecto (pedal) o no manual." },
+        { q: "¿Qué es un alimento perecedero?", a: "Alimento que exige condiciones especiales de conservación por su composición." },
+        { q: "¿Quiénes son las autoridades sanitarias en Colombia?", a: "El INVIMA y las Entidades Territoriales de Salud." },
+        { q: "¿Material recomendado para equipos y utensilios?", a: "Materiales resistentes a la corrosión y fáciles de limpiar (ej. Acero Inoxidable)." },
+        { q: "¿Autorización para alimentos de riesgo medio?", a: "Permiso Sanitario." }
+    ];
+
+    // --- LÓGICA GENERAL ---
+    function switchGame(gameId) {
+        document.querySelectorAll('.game-container').forEach(el => el.classList.remove('active'));
+        document.getElementById('game-' + gameId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active');
+
+        if(gameId === 'quiz') initQuiz();
+        if(gameId === 'memory') initMemory();
+    }
+
+    // --- LÓGICA FLASHCARDS ---
+    let fcIndex = 0;
+    const fcCard = document.getElementById('flashcard');
+    
+    function updateFlashcard() {
+        document.getElementById('fc-question').textContent = db[fcIndex].q;
+        document.getElementById('fc-answer').textContent = db[fcIndex].a;
+        document.getElementById('fc-counter').textContent = `${fcIndex + 1} / ${db.length}`;
+        fcCard.classList.remove('is-flipped');
+    }
+
+    function flipCard() {
+        fcCard.classList.toggle('is-flipped');
+    }
+
+    function nextCard(e) {
+        e.stopPropagation();
+        if (fcIndex < db.length - 1) {
+            fcIndex++;
+            updateFlashcard();
+        }
+    }
+
+    function prevCard(e) {
+        e.stopPropagation();
+        if (fcIndex > 0) {
+            fcIndex--;
+            updateFlashcard();
+        }
+    }
+
+    // Inicializar Flashcards
+    updateFlashcard();
+
+
+    // --- LÓGICA QUIZ ---
+    let quizIndex = 0;
+    let score = 0;
+    let currentQuizData = [];
+
+    function initQuiz() {
+        quizIndex = 0;
+        score = 0;
+        document.getElementById('quiz-area').style.display = 'block';
+        document.getElementById('quiz-score-area').style.display = 'none';
+        
+        // Mezclar preguntas
+        currentQuizData = [...db].sort(() => 0.5 - Math.random()).slice(0, 10); // Tomar 10 preguntas al azar
+        loadQuizQuestion();
+    }
+
+    function loadQuizQuestion() {
+        if (quizIndex >= currentQuizData.length) {
+            finishQuiz();
+            return;
+        }
+
+        const item = currentQuizData[quizIndex];
+        document.getElementById('q-number').textContent = quizIndex + 1;
+        document.getElementById('quiz-q-text').textContent = item.q;
+        
+        const optionsDiv = document.getElementById('quiz-options');
+        optionsDiv.innerHTML = '';
+
+        // Generar distractores (respuestas incorrectas)
+        let answers = [item.a];
+        while (answers.length < 4) {
+            let randomItem = db[Math.floor(Math.random() * db.length)];
+            if (!answers.includes(randomItem.a)) {
+                answers.push(randomItem.a);
+            }
+        }
+        answers.sort(() => 0.5 - Math.random()); // Mezclar opciones
+
+        answers.forEach(ans => {
+            const btn = document.createElement('div');
+            btn.className = 'option-btn';
+            btn.textContent = ans;
+            btn.onclick = () => checkAnswer(btn, ans, item.a);
+            optionsDiv.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(btn, selected, correct) {
+        // Deshabilitar clics
+        const allBtns = document.querySelectorAll('.option-btn');
+        allBtns.forEach(b => b.style.pointerEvents = 'none');
+
+        if (selected === correct) {
+            btn.classList.add('correct');
+            score++;
+        } else {
+            btn.classList.add('wrong');
+            // Mostrar la correcta
+            allBtns.forEach(b => {
+                if(b.textContent === correct) b.classList.add('correct');
+            });
+        }
+
+        setTimeout(() => {
+            quizIndex++;
+            loadQuizQuestion();
+        }, 1500);
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-area').style.display = 'none';
+        document.getElementById('quiz-score-area').style.display = 'block';
+        document.getElementById('final-score').textContent = `${score} / ${currentQuizData.length}`;
+    }
+
+
+    // --- LÓGICA MEMORIA ---
+    let memoryCards = [];
+    let hasFlippedCard = false;
+    let lockBoard = false;
+    let firstCard, secondCard;
+
+    function initMemory() {
+        const board = document.getElementById('memory-board');
+        board.innerHTML = '';
+        // Seleccionar 6 pares al azar para que no sea muy largo
+        const selection = [...db].sort(() => 0.5 - Math.random()).slice(0, 6);
+        
+        // Crear array con pares (Pregunta y Respuesta)
+        let deck = [];
+        selection.forEach((item, index) => {
+            deck.push({ id: index, type: 'q', text: item.q, pairId: index });
+            deck.push({ id: index, type: 'a', text: item.a, pairId: index });
+        });
+
+        // Mezclar mazo
+        deck.sort(() => 0.5 - Math.random());
+
+        deck.forEach(item => {
+            const card = document.createElement('div');
+            card.classList.add('memory-card');
+            card.dataset.pair = item.pairId;
+            
+            // Contenido inicial (Icono de interrogación)
+            card.innerHTML = '<i class="fas fa-question fa-2x"></i>';
+
+            // Al hacer clic
+            card.addEventListener('click', function() {
+                flipMemoryCard(this, item.text, item.type);
+            });
+
+            board.appendChild(card);
+        });
+    }
+
+    function flipMemoryCard(card, text, type) {
+        if (lockBoard) return;
+        if (card === firstCard) return;
+
+        card.classList.add('flipped');
+        // Mostrar texto, si es largo reducir fuente
+        const fontSize = text.length > 50 ? '0.7rem' : '0.85rem';
+        const typeLabel = type === 'q' ? '<span style="color:var(--primary); font-weight:bold; display:block; font-size:0.7rem;">PREGUNTA</span>' : '<span style="color:var(--secondary); font-weight:bold; display:block; font-size:0.7rem;">RESPUESTA</span>';
+        card.innerHTML = `<div style="padding:5px; font-size:${fontSize}">${typeLabel}${text}</div>`;
+
+        if (!hasFlippedCard) {
+            hasFlippedCard = true;
+            firstCard = card;
+            return;
+        }
+
+        secondCard = card;
+        checkForMatch();
+    }
+
+    function checkForMatch() {
+        let isMatch = firstCard.dataset.pair === secondCard.dataset.pair;
+        isMatch ? disableCards() : unflipCards();
+    }
+
+    function disableCards() {
+        firstCard.classList.add('matched');
+        secondCard.classList.add('matched');
+        resetBoard();
+    }
+
+    function unflipCards() {
+        lockBoard = true;
+        setTimeout(() => {
+            firstCard.classList.remove('flipped');
+            secondCard.classList.remove('flipped');
+            firstCard.innerHTML = '<i class="fas fa-question fa-2x"></i>';
+            secondCard.innerHTML = '<i class="fas fa-question fa-2x"></i>';
+            resetBoard();
+        }, 1500);
+    }
+
+    function resetBoard() {
+        [hasFlippedCard, lockBoard] = [false, false];
+        [firstCard, secondCard] = [null, null];
+    }
+
+</script>
+
+</body>
+</html>
